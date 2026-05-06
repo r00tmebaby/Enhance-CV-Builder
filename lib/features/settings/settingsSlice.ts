@@ -14,6 +14,7 @@ const initialState: SettingsState = {
     lineHeight: 1.4,
     primaryColor: "#14b8a6", // teal-500
     headingColor: "#3e3e3e",
+    leftSidebarBgColor: "#22405c",
     pageBackgroundColor: "#ffffff",
     pageBackgroundMode: 'solid',
     pageBackgroundPattern: "none",
@@ -44,6 +45,7 @@ export const settingsSlice = createSlice({
             state.lineHeight = 1.4
             state.primaryColor = "#14b8a6"
             state.headingColor = "#3e3e3e"
+            state.leftSidebarBgColor = "#22405c"
             state.pageMargins = 36
             state.sectionSpacing = 24
             state.pageBackgroundColor = "#ffffff"
@@ -134,6 +136,10 @@ export const settingsSlice = createSlice({
             state.headingColor = action.payload
         },
 
+        setLeftSidebarBgColor: (state, action: PayloadAction<string>) => {
+            state.leftSidebarBgColor = action.payload
+        },
+
         setPageBackgroundColor: (state, action: PayloadAction<string>) => {
             state.pageBackgroundColor = action.payload
         },
@@ -215,6 +221,7 @@ export const {
     setLineHeight,
     setPrimaryColor,
     setHeadingColor,
+    setLeftSidebarBgColor,
     setPageBackgroundColor,
     setPageBackgroundPattern,
     setPageBackgroundMode,

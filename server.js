@@ -5,7 +5,7 @@ const { createServer } = require('http');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const port = process.env.PORT || 3000; // Passenger sets PORT automatically
+const port = process.env.PORT || 3030; // Passenger sets PORT automatically
 const hostname = process.env.HOST || '127.0.0.1';
 
 const app = next({ dev, hostname, port, dir: __dirname });

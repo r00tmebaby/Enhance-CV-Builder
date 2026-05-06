@@ -8,7 +8,7 @@ An interactive, multi-template resume builder with a 3-pane editor (left menu, c
 
 ---
 
-## ✨ Highlights
+## Highlights
 
 - 3-pane layout: left actions menu, center resume canvas, right Design & Font panel (always visible)
 - Single page scrollbar (no nested scrolling) for smooth multi-page editing
@@ -22,7 +22,7 @@ An interactive, multi-template resume builder with a 3-pane editor (left menu, c
 
 ---
 
-## 🧩 Templates
+## Templates
 
 Source files live in `components/ResumeTemplates/`:
 
@@ -37,7 +37,7 @@ Per-template defaults: Elegant uses tighter margins/spacing and 70% font-size on
 
 ---
 
-## 🎛 Design & Font panel
+## Design & Font panel
 
 - Grouped controls with separators and collapsible sections
 - Page Background (accordion): Solid/Pattern/Gradient with color(s) + angle
@@ -47,7 +47,7 @@ Per-template defaults: Elegant uses tighter margins/spacing and 70% font-size on
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Requirements
 
@@ -79,7 +79,7 @@ Open http://localhost:3000
 
 ---
 
-## � Usage tips
+## Usage tips
 
 - Edit text inline; use section toolbars for quick actions
 - Use “Rearrange” (left menu) for bulk DnD; page-aware DnD also works inline
@@ -88,7 +88,7 @@ Open http://localhost:3000
 
 ---
 
-## 🛠️ CI/CD Workflows
+## CI/CD Workflows
 
 GitHub Actions lives in `.github/workflows/`:
 
@@ -104,7 +104,7 @@ Badges and workflow names can be adjusted as you prefer.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 app/                     # Next.js App Router
@@ -119,7 +119,7 @@ public/                  # Static assets (templates thumbnails, patterns)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1) Fork → 2) Branch → 3) Commit → 4) Push → 5) PR
 
@@ -127,17 +127,7 @@ Suggested commit style: Conventional Commits (e.g., `feat:`, `fix:`, `docs:`)
 
 ---
 
-## 📄 License
-
-MIT — see [LICENSE](./LICENSE)
-
----
-
-Built with ❤️ by **r00tmebaby**
-
----
-
-## 🧪 Run CI locally
+## Run CI locally
 
 Fast parity with CI without pushing:
 

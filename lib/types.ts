@@ -289,6 +289,7 @@ export interface SettingsState {
   lineHeight: number
   primaryColor: string
   headingColor: string
+  leftSidebarBgColor?: string
   pageBackgroundColor: string
   pageBackgroundMode: 'solid' | 'pattern' | 'gradient'
   pageBackgroundPattern: "none" | "dots" | "diagonal-stripes" | "grid" | "crosshatch"
