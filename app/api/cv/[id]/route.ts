@@ -2,148 +2,162 @@ import { NextResponse } from "next/server"
 import path from "path"
 import { promises as fs } from "fs"
 import crypto from "crypto"
+import { isValidId, isAuthorized, withLock, CvBodySchema, PatchBodySchema } from "@/lib/server/cv"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const dataDir = path.join(process.cwd(), "data", "cv")
+const fileFor = (id: string) => path.join(dataDir, `${id}.json`)
 
-// Document ids are server-generated UUIDs. Validate before using an id in a
-// filesystem path so a crafted value (e.g. "../../etc") cannot traverse outside
-// the data directory.
-const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-const isValidId = (id: string) => UUID_RE.test(id)
-const invalidIdResponse = () => NextResponse.json({ error: "Invalid document id" }, { status: 400 })
+const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+const invalidId = () => NextResponse.json({ error: "Invalid document id" }, { status: 400 })
+const errorCode = (err: unknown) => (err as NodeJS.ErrnoException)?.code
+const errorMessage = (err: unknown) => (err instanceof Error ? err.message : undefined)
 
 async function readDoc(id: string) {
-  const filePath = path.join(dataDir, `${id}.json`)
-  const raw = await fs.readFile(filePath, "utf-8")
+  const raw = await fs.readFile(fileFor(id), "utf-8")
   return JSON.parse(raw)
 }
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!isAuthorized(req)) return unauthorized()
     const { id } = await params
-    if (!isValidId(id)) return invalidIdResponse()
+    if (!isValidId(id)) return invalidId()
     const doc = await readDoc(id)
     return NextResponse.json(doc)
-  } catch (err: any) {
-    const status = err?.code === 'ENOENT' ? 404 : 500
-    return NextResponse.json({ error: err?.message || "Failed to read CV" }, { status })
+  } catch (err) {
+    const status = errorCode(err) === "ENOENT" ? 404 : 500
+    return NextResponse.json({ error: errorMessage(err) || "Failed to read CV" }, { status })
   }
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!isAuthorized(req)) return unauthorized()
     const { id } = await params
-    if (!isValidId(id)) return invalidIdResponse()
-    const filePath = path.join(dataDir, `${id}.json`)
-    const raw = await fs.readFile(filePath, "utf-8").catch((e) => {
-      if (e?.code === 'ENOENT') return null
-      throw e
-    })
-    if (!raw) return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    if (!isValidId(id)) return invalidId()
 
-  const doc = JSON.parse(raw)
-  const body = await req.json()
-  const { resume, settings, resumeHistory, name, snapshot } = body || {}
-    if (!resume?.header || !Array.isArray(resume?.sections)) {
-      return NextResponse.json({ error: "Invalid payload: missing resume.header or resume.sections" }, { status: 400 })
+    const parsed = CvBodySchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload", details: parsed.error.flatten() }, { status: 400 })
     }
+    const { resume, settings, resumeHistory, name, snapshot } = parsed.data
 
-    const now = Date.now()
-    const editHistory = (resumeHistory && Array.isArray(resumeHistory.past) && Array.isArray(resumeHistory.future))
-      ? { past: resumeHistory.past.slice(-50), future: resumeHistory.future.slice(-50) }
-      : undefined
-    const resumePayload = { header: resume.header, sections: resume.sections }
+    // Serialize per-document writes so concurrent autosaves can't clobber each other.
+    return await withLock(id, async () => {
+      const raw = await fs.readFile(fileFor(id), "utf-8").catch((e) => {
+        if (errorCode(e) === "ENOENT") return null
+        throw e
+      })
+      if (!raw) return NextResponse.json({ error: "Document not found" }, { status: 404 })
 
-    // Always update the live "current" version in place. We keep its id and its
-    // name so autosaves never strip the document's name (which would drop it from
-    // the saved documents list). A new name, if provided, updates the document name.
-    doc.current = {
-      id: doc.current?.id || crypto.randomUUID(),
-      timestamp: now,
-      name: name ?? doc.current?.name,
-      resume: resumePayload,
-      settings: settings ?? {},
-      ...(editHistory ? { editHistory } : {}),
-    }
-    doc.updatedAt = now
+      const doc = JSON.parse(raw)
+      const now = Date.now()
+      const editHistory = resumeHistory && Array.isArray(resumeHistory.past) && Array.isArray(resumeHistory.future)
+        ? { past: resumeHistory.past.slice(-50), future: resumeHistory.future.slice(-50) }
+        : undefined
+      const resumePayload = { header: resume.header, sections: resume.sections }
 
-    // Manual Save (snapshot=true) also records a frozen restore point in history.
-    if (snapshot) {
-      doc.history = doc.history || []
-      doc.history.unshift({
-        id: crypto.randomUUID(),
+      // Update the live "current" version in place, preserving id and name so
+      // autosaves never strip the document name (which would drop it from the list).
+      doc.current = {
+        id: doc.current?.id || crypto.randomUUID(),
         timestamp: now,
-        name: name || undefined,
+        name: name ?? doc.current?.name,
         resume: resumePayload,
         settings: settings ?? {},
         ...(editHistory ? { editHistory } : {}),
-      })
-      // Keep the 50 most recent restore points.
-      if (doc.history.length > 50) doc.history = doc.history.slice(0, 50)
-    }
+      }
+      doc.updatedAt = now
 
-    await fs.writeFile(filePath, JSON.stringify(doc, null, 2), "utf-8")
-    return NextResponse.json(doc)
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to update CV" }, { status: 500 })
+      // Manual Save (snapshot=true) also records a frozen restore point in history.
+      if (snapshot) {
+        doc.history = doc.history || []
+        doc.history.unshift({
+          id: crypto.randomUUID(),
+          timestamp: now,
+          name: name || undefined,
+          resume: resumePayload,
+          settings: settings ?? {},
+          ...(editHistory ? { editHistory } : {}),
+        })
+        if (doc.history.length > 50) doc.history = doc.history.slice(0, 50)
+      }
+
+      await fs.writeFile(fileFor(id), JSON.stringify(doc, null, 2), "utf-8")
+      return NextResponse.json(doc)
+    })
+  } catch (err) {
+    return NextResponse.json({ error: errorMessage(err) || "Failed to update CV" }, { status: 500 })
   }
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!isAuthorized(req)) return unauthorized()
     const { id } = await params
-    if (!isValidId(id)) return invalidIdResponse()
-    const filePath = path.join(dataDir, `${id}.json`)
-    const raw = await fs.readFile(filePath, "utf-8")
-    const doc = JSON.parse(raw)
-    const { action, snapshotId, name } = await req.json()
-    if (action === 'rename') {
-      if (!snapshotId || !name) return NextResponse.json({ error: 'snapshotId and name required' }, { status: 400 })
-      if (doc.current?.id === snapshotId) {
-        doc.current.name = name
-      } else {
-        const s = (doc.history || []).find((x: any) => x.id === snapshotId)
-        if (!s) return NextResponse.json({ error: 'Snapshot not found' }, { status: 404 })
-        s.name = name
-      }
-    } else if (action === 'delete') {
-      if (!snapshotId) return NextResponse.json({ error: 'snapshotId required' }, { status: 400 })
-      if (doc.current?.id === snapshotId) {
-        // Deleting current promotes most recent history as current
-        const next = (doc.history || []).shift()
-        if (!next) return NextResponse.json({ error: 'Cannot delete last remaining snapshot' }, { status: 400 })
-        doc.current = next
-      } else {
-        doc.history = (doc.history || []).filter((x: any) => x.id !== snapshotId)
-      }
-    } else if (action === 'clear-edit-history') {
-      // Clear persisted edit steps for the current snapshot only
-      if (doc.current) {
-        doc.current.editHistory = { past: [], future: [] }
-        doc.updatedAt = Date.now()
-      }
-    } else {
-      return NextResponse.json({ error: 'Unsupported action' }, { status: 400 })
+    if (!isValidId(id)) return invalidId()
+
+    const parsed = PatchBodySchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload", details: parsed.error.flatten() }, { status: 400 })
     }
-    await fs.writeFile(filePath, JSON.stringify(doc, null, 2), 'utf-8')
-    return NextResponse.json(doc)
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to update snapshot" }, { status: 500 })
+    const { action, snapshotId, name } = parsed.data
+
+    return await withLock(id, async () => {
+      const raw = await fs.readFile(fileFor(id), "utf-8").catch((e) => {
+        if (errorCode(e) === "ENOENT") return null
+        throw e
+      })
+      if (!raw) return NextResponse.json({ error: "Document not found" }, { status: 404 })
+      const doc = JSON.parse(raw)
+
+      if (action === "rename") {
+        if (!snapshotId || !name) return NextResponse.json({ error: "snapshotId and name required" }, { status: 400 })
+        if (doc.current?.id === snapshotId) {
+          doc.current.name = name
+        } else {
+          const s = (doc.history || []).find((x: { id: string }) => x.id === snapshotId)
+          if (!s) return NextResponse.json({ error: "Snapshot not found" }, { status: 404 })
+          s.name = name
+        }
+      } else if (action === "delete") {
+        if (!snapshotId) return NextResponse.json({ error: "snapshotId required" }, { status: 400 })
+        if (doc.current?.id === snapshotId) {
+          const next = (doc.history || []).shift()
+          if (!next) return NextResponse.json({ error: "Cannot delete last remaining snapshot" }, { status: 400 })
+          doc.current = next
+        } else {
+          doc.history = (doc.history || []).filter((x: { id: string }) => x.id !== snapshotId)
+        }
+      } else if (action === "clear-edit-history") {
+        if (doc.current) {
+          doc.current.editHistory = { past: [], future: [] }
+          doc.updatedAt = Date.now()
+        }
+      }
+
+      await fs.writeFile(fileFor(id), JSON.stringify(doc, null, 2), "utf-8")
+      return NextResponse.json(doc)
+    })
+  } catch (err) {
+    return NextResponse.json({ error: errorMessage(err) || "Failed to update snapshot" }, { status: 500 })
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (!isAuthorized(req)) return unauthorized()
     const { id } = await params
-    if (!isValidId(id)) return invalidIdResponse()
-    const filePath = path.join(dataDir, `${id}.json`)
-    await fs.unlink(filePath)
-    return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    const status = err?.code === 'ENOENT' ? 404 : 500
-    return NextResponse.json({ error: err?.message || "Failed to delete CV" }, { status })
+    if (!isValidId(id)) return invalidId()
+    return await withLock(id, async () => {
+      await fs.unlink(fileFor(id))
+      return NextResponse.json({ ok: true })
+    })
+  } catch (err) {
+    const status = errorCode(err) === "ENOENT" ? 404 : 500
+    return NextResponse.json({ error: errorMessage(err) || "Failed to delete CV" }, { status })
   }
 }
