@@ -11,6 +11,13 @@ export interface Header {
   visibility: HeaderVisibility
   uppercaseName: boolean
   roundPhoto: boolean
+  // Profile photo layout (all optional; sensible defaults applied at render)
+  photoSize?: number        // frame width/height in px
+  photoPosX?: number        // free-move translate X in px from the default slot
+  photoPosY?: number        // free-move translate Y in px
+  photoOffsetX?: number     // object-position X (0-100) to pan image inside frame
+  photoOffsetY?: number     // object-position Y (0-100)
+  photoAlign?: "left" | "center" | "right" // horizontal placement preset
 }
 
 export interface HeaderVisibility {
@@ -118,6 +125,90 @@ export interface AchievementContentVisibility {
   icon: boolean
 }
 
+// Training / Courses entries (title + provider + period + description)
+export interface TrainingSectionItem {
+  id: string
+  title: string
+  institution: string
+  period: string
+  description: string
+  visibility?: { institution: boolean; period: boolean; description: boolean }
+}
+
+// Publications (title + publisher + period + link + description)
+export interface PublicationSectionItem {
+  id: string
+  title: string
+  publisher: string
+  period: string
+  link: string
+  description: string
+  visibility?: { publisher: boolean; period: boolean; link: boolean; description: boolean }
+}
+
+// Awards (icon + title + issuer), typically laid out two per row
+export interface AwardSectionItem {
+  id: string
+  title: string
+  issuer: string
+  icon: string
+  visibility?: { issuer: boolean; icon: boolean }
+}
+
+// References (name + email + phone), typically laid out two per row
+export interface ReferenceSectionItem {
+  id: string
+  name: string
+  company: string
+  email: string
+  phone: string
+  visibility?: { company: boolean; email: boolean; phone: boolean }
+}
+
+// Strengths (icon + title + description) - same shape as achievements
+export interface StrengthSectionItem {
+  id: string
+  title: string
+  description: string
+  icon: string
+  visibility?: { description: boolean; icon: boolean }
+}
+
+// My Life Philosophy (a highlighted quote + attribution)
+export interface PhilosophyItem {
+  id: string
+  quote: string
+  author: string
+  visibility?: { author: boolean }
+}
+
+// Books (cover image + title + author)
+export interface BookSectionItem {
+  id: string
+  title: string
+  author: string
+  coverUrl: string
+  visibility?: { author: boolean; cover: boolean }
+}
+
+// Custom (flexible entry: icon + title + subtitle + period + description)
+export interface CustomSectionItem {
+  id: string
+  title: string
+  subtitle: string
+  period: string
+  description: string
+  icon: string
+  visibility?: { subtitle: boolean; period: boolean; description: boolean; icon: boolean }
+}
+
+// Your Signature (single uploaded signature image)
+export interface SignatureItem {
+  id: string
+  imageUrl: string
+  width: number // rendered width in px
+}
+
 export enum SectionTypeEnum {
   EDUCATION = "educations",
   PROJECTS = "projects",
@@ -127,6 +218,15 @@ export enum SectionTypeEnum {
   VOLUNTEERING = "volunteering",
   MY_TIME = "my_time",
   INDUSTRY_EXPERTISE = "industry_expertise",
+  TRAINING = "training",
+  PUBLICATIONS = "publications",
+  AWARDS = "awards",
+  REFERENCES = "references",
+  STRENGTHS = "strengths",
+  PHILOSOPHY = "philosophy",
+  BOOKS = "books",
+  CUSTOM = "custom",
+  SIGNATURE = "signature",
 }
 
 export interface VolunteeringItem {
@@ -166,6 +266,15 @@ export type SectionType =
   | SectionTypeEnum.VOLUNTEERING
   | SectionTypeEnum.MY_TIME
   | SectionTypeEnum.INDUSTRY_EXPERTISE
+  | SectionTypeEnum.TRAINING
+  | SectionTypeEnum.PUBLICATIONS
+  | SectionTypeEnum.AWARDS
+  | SectionTypeEnum.REFERENCES
+  | SectionTypeEnum.STRENGTHS
+  | SectionTypeEnum.PHILOSOPHY
+  | SectionTypeEnum.BOOKS
+  | SectionTypeEnum.CUSTOM
+  | SectionTypeEnum.SIGNATURE
 
 export type SectionContent = EducationSectionItem | ProjectSectionItem | LanguageSectionItem | SkillSectionItem | AchievementSectionItem
 
@@ -200,6 +309,15 @@ export interface Section {
     volunteering?: VolunteeringItem[];
     my_time?: MyTimeItem[];
     industry_expertise?: IndustryExpertiseItem[];
+    training?: TrainingSectionItem[];
+    publications?: PublicationSectionItem[];
+    awards?: AwardSectionItem[];
+    references?: ReferenceSectionItem[];
+    strengths?: StrengthSectionItem[];
+    philosophy?: PhilosophyItem[];
+    books?: BookSectionItem[];
+    custom?: CustomSectionItem[];
+    signature?: SignatureItem[];
   }
 }
 
@@ -212,6 +330,15 @@ export type SectionContentMap = {
   volunteering: VolunteeringItem[];
   my_time: MyTimeItem[];
   industry_expertise: IndustryExpertiseItem[];
+  training: TrainingSectionItem[];
+  publications: PublicationSectionItem[];
+  awards: AwardSectionItem[];
+  references: ReferenceSectionItem[];
+  strengths: StrengthSectionItem[];
+  philosophy: PhilosophyItem[];
+  books: BookSectionItem[];
+  custom: CustomSectionItem[];
+  signature: SignatureItem[];
 };
 
 export type VisibilityActionPayload = {
@@ -303,6 +430,7 @@ export interface SettingsState {
   overlayX?: number // percent 0..100 from left
   overlayY?: number // percent 0..100 from top
   overlayPositioning?: boolean // enable drag to position in editor
+  photoPositioning?: boolean // enable drag/resize of the profile photo
   showDesignPanel: boolean
   showTemplatesModal: boolean
   showAddSectionModal: boolean

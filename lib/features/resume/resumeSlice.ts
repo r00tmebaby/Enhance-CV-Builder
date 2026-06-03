@@ -311,6 +311,15 @@ export const resumeSlice = createSlice({
       state.header.photoUrl = action.payload.photoUrl
     },
 
+    // Merge profile photo layout fields. No history snapshot: drag/resize fire
+    // continuously and would otherwise flood the undo stack.
+    updateHeaderPhotoLayout: (
+      state,
+      action: PayloadAction<Partial<Pick<ResumeState["header"], "photoSize" | "photoPosX" | "photoPosY" | "photoOffsetX" | "photoOffsetY" | "photoAlign">>>,
+    ) => {
+      Object.assign(state.header, action.payload)
+    },
+
     // Active section action
     upsertActiveSection: (state, action: PayloadAction<{
       activeSection: ActiveSection | null
@@ -850,6 +859,7 @@ export const {
   toggleUppercaseName,
   togglePhotoStyle,
   uploadProfilePhoto,
+  updateHeaderPhotoLayout,
   upsertActiveSection,
   addSection,
   removeSection,

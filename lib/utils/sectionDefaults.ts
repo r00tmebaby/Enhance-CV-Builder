@@ -1,4 +1,4 @@
-import { SectionTypeEnum, Section, EducationSectionItem, ProjectSectionItem, LanguageSectionItem, SkillSectionItem, AchievementSectionItem, VolunteeringItem, MyTimeItem, IndustryExpertiseItem } from "@/lib/types"
+import { SectionTypeEnum, Section, EducationSectionItem, ProjectSectionItem, LanguageSectionItem, SkillSectionItem, AchievementSectionItem, VolunteeringItem, MyTimeItem, IndustryExpertiseItem, TrainingSectionItem, PublicationSectionItem, AwardSectionItem, ReferenceSectionItem, StrengthSectionItem, PhilosophyItem, BookSectionItem, CustomSectionItem, SignatureItem } from "@/lib/types"
 
 export const getDefaultEntry = (sectionType: SectionTypeEnum) => {
   const timestamp = Date.now()
@@ -107,6 +107,90 @@ export const getDefaultEntry = (sectionType: SectionTypeEnum) => {
         // gradientTo can be set when user selects Gradient style
       } as IndustryExpertiseItem
 
+    case SectionTypeEnum.TRAINING:
+      return {
+        id: `training-${timestamp}`,
+        title: "Creative Writing",
+        institution: "Coursera",
+        period: "2021 – 2022",
+        description: "An intensive 8-week course covering narrative structure and editing.",
+        visibility: { institution: true, period: true, description: true },
+      } as TrainingSectionItem
+
+    case SectionTypeEnum.PUBLICATIONS:
+      return {
+        id: `pub-${timestamp}`,
+        title: "Dublin 101",
+        publisher: "Dublin Globe",
+        period: "2023",
+        link: "www.dublinglobe.com/101",
+        description: "An intro to the startup ecosystem of Dublin.",
+        visibility: { publisher: true, period: true, link: true, description: true },
+      } as PublicationSectionItem
+
+    case SectionTypeEnum.AWARDS:
+      return {
+        id: `award-${timestamp}`,
+        title: "Dean's List",
+        issuer: "Cornell School of Engineering",
+        icon: "award",
+        visibility: { issuer: true, icon: true },
+      } as AwardSectionItem
+
+    case SectionTypeEnum.REFERENCES:
+      return {
+        id: `ref-${timestamp}`,
+        name: "Thomas Brown",
+        company: "Horowitz and Partners",
+        email: "thomas.brown@gmail.com",
+        phone: "1-503-254-1000",
+        visibility: { company: true, email: true, phone: true },
+      } as ReferenceSectionItem
+
+    case SectionTypeEnum.STRENGTHS:
+      return {
+        id: `strength-${timestamp}`,
+        title: "Go-getter",
+        description: "10+ neighbours have taught me that with persistence, one can achieve anything.",
+        icon: "zap",
+        visibility: { description: true, icon: true },
+      } as StrengthSectionItem
+
+    case SectionTypeEnum.PHILOSOPHY:
+      return {
+        id: `phil-${timestamp}`,
+        quote: "First they ignore you, then they laugh at you, then they fight you, then you win.",
+        author: "Mahatma Gandhi",
+        visibility: { author: true },
+      } as PhilosophyItem
+
+    case SectionTypeEnum.BOOKS:
+      return {
+        id: `book-${timestamp}`,
+        title: "The Lean Startup",
+        author: "Eric Ries",
+        coverUrl: "",
+        visibility: { author: true, cover: true },
+      } as BookSectionItem
+
+    case SectionTypeEnum.CUSTOM:
+      return {
+        id: `custom-${timestamp}`,
+        title: "Inspired & Challenged",
+        subtitle: "Self-employed",
+        period: "10/2014 – 06/2015",
+        description: "More than 1 million children to love science, nature, and engineering through #ScienceForAll.",
+        icon: "award",
+        visibility: { subtitle: true, period: true, description: true, icon: true },
+      } as CustomSectionItem
+
+    case SectionTypeEnum.SIGNATURE:
+      return {
+        id: `sign-${timestamp}`,
+        imageUrl: "",
+        width: 180,
+      } as SignatureItem
+
     default:
       return null
   }
@@ -214,6 +298,65 @@ export const getDefaultSection = (sectionType: SectionTypeEnum, column: "left" |
           ],
         },
       }
+
+    case SectionTypeEnum.TRAINING:
+      return { id: sectionId, type: SectionTypeEnum.TRAINING, column, title, content: { training: [entry as TrainingSectionItem] } }
+
+    case SectionTypeEnum.PUBLICATIONS:
+      return { id: sectionId, type: SectionTypeEnum.PUBLICATIONS, column, title, content: { publications: [entry as PublicationSectionItem] } }
+
+    case SectionTypeEnum.AWARDS:
+      return {
+        id: sectionId, type: SectionTypeEnum.AWARDS, column, title,
+        content: {
+          awards: [
+            entry as AwardSectionItem,
+            { id: `award-${Date.now()}-2`, title: "Valedictorian", issuer: "South Boston High School", icon: "globe", visibility: { issuer: true, icon: true } },
+          ],
+        },
+      }
+
+    case SectionTypeEnum.REFERENCES:
+      return {
+        id: sectionId, type: SectionTypeEnum.REFERENCES, column, title,
+        content: {
+          references: [
+            entry as ReferenceSectionItem,
+            { id: `ref-${Date.now()}-2`, name: "John Silver", company: "", email: "jj.silva@horowitzandpartners.com", phone: "", visibility: { company: true, email: true, phone: true } },
+          ],
+        },
+      }
+
+    case SectionTypeEnum.STRENGTHS:
+      return {
+        id: sectionId, type: SectionTypeEnum.STRENGTHS, column, title,
+        content: {
+          strengths: [
+            entry as StrengthSectionItem,
+            { id: `strength-${Date.now()}-2`, title: "Determined", description: "Developed comprehensive risk frameworks that reduced exposure across the board.", icon: "target", visibility: { description: true, icon: true } },
+          ],
+        },
+      }
+
+    case SectionTypeEnum.PHILOSOPHY:
+      return { id: sectionId, type: SectionTypeEnum.PHILOSOPHY, column, title, content: { philosophy: [entry as PhilosophyItem] } }
+
+    case SectionTypeEnum.BOOKS:
+      return {
+        id: sectionId, type: SectionTypeEnum.BOOKS, column, title,
+        content: {
+          books: [
+            entry as BookSectionItem,
+            { id: `book-${Date.now()}-2`, title: "Zero to One", author: "Peter Thiel", coverUrl: "", visibility: { author: true, cover: true } },
+          ],
+        },
+      }
+
+    case SectionTypeEnum.CUSTOM:
+      return { id: sectionId, type: SectionTypeEnum.CUSTOM, column, title, content: { custom: [entry as CustomSectionItem] } }
+
+    case SectionTypeEnum.SIGNATURE:
+      return { id: sectionId, type: SectionTypeEnum.SIGNATURE, column, title, content: { signature: [entry as SignatureItem] } }
 
     default:
       return null

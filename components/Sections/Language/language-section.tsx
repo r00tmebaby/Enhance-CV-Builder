@@ -16,6 +16,7 @@ import { RootState } from "@/lib/store"
 export default function LanguageSection({ section, isActive, darkMode = false, handleEntryToggle, handleContextMenu }: SectionProps) {
     const dispatch = useDispatch()
     const activeSection = useSelector((state: RootState) => state.resume.activeSection)
+    const primaryColor = useSelector((state: RootState) => state.settings.primaryColor)
 
     const handleEntryUpdate = (langId: string, field: string, value: string | number) => {
         dispatch(
@@ -57,15 +58,21 @@ export default function LanguageSection({ section, isActive, darkMode = false, h
                     onClick={(e) => handleEntryToggle(e, item.id)}
                 >
 
-                    <div className="flex items-center justify-between">
+                    <div className={cn(
+                        "flex items-center justify-between gap-2",
+                        darkMode && section.column === 'right' && "flex-col items-start gap-1"
+                    )}>
                         <EditableText
                             value={item.name}
                             onChange={(value) => handleEntryUpdate(item.id, "name", value)}
-                            className={cn("editable-field", darkMode && section.column === 'right' && "!text-white")}
+                            className={cn("editable-field whitespace-nowrap", darkMode && section.column === 'right' && "!text-white")}
                             placeholder="Language"
                         />
 
-                        <div className="flex items-center justify-end gap-2">
+                        <div className={cn(
+                            "flex items-center justify-end gap-2 shrink-0",
+                            darkMode && section.column === 'right' && "justify-start"
+                        )}>
                             {item.visibility?.proficiency !== false && (
                                 <EditableText
                                     value={item.level}
@@ -80,8 +87,10 @@ export default function LanguageSection({ section, isActive, darkMode = false, h
                                             key={rating}
                                             className={cn(
                                                 "w-4 h-4 rounded-full mx-0.5 cursor-pointer",
-                                                rating <= item.proficiency ? "bg-teal-500" : "bg-gray-200",
+                                                rating > item.proficiency && "bg-gray-200",
+                                                rating <= item.proficiency && darkMode && section.column === 'right' && "bg-white",
                                             )}
+                                            style={rating <= item.proficiency && !(darkMode && section.column === 'right') ? { backgroundColor: primaryColor } : undefined}
                                             onClick={() => handleEntryUpdate(item.id, "proficiency", rating)}
                                         ></div>
                                     ))}

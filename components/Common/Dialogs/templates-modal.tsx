@@ -1,10 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { X, Check } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Check } from "lucide-react"
 import { setTemplate, setTemplatesModal } from "@/lib/features/settings/settingsSlice"
 import type { RootState } from "@/lib/store"
 
@@ -29,29 +27,39 @@ const templates = [
         description: "Sidebar on the left with main content on right",
         image: "/templates/modern.png",
     },
-     {
-         id: "timeline",
-     name: "Timeline",
-     description: "Chronological timeline format",
-     image: "/templates/Timeline.png",
-     },
+    {
+        id: "classic-teal",
+        name: "Classic Teal",
+        description: "Single column, centered header, teal accents",
+        image: "/templates/classic-teal.png",
+    },
+    {
+        id: "classic-navy",
+        name: "Classic Navy",
+        description: "Single column, centered header, navy accents",
+        image: "/templates/classic-navy.png",
+    },
+    {
+        id: "classic-burgundy",
+        name: "Classic Burgundy",
+        description: "Single column, centered header, burgundy accents",
+        image: "/templates/classic-burgundy.png",
+    },
+    {
+        id: "classic-charcoal",
+        name: "Classic Charcoal",
+        description: "Single column, centered header, charcoal accents",
+        image: "/templates/classic-charcoal.png",
+    },
 ]
 
 export default function TemplatesModal({ }: TemplatesModalProps) {
     const dispatch = useDispatch()
     const { template, showTemplatesModal } = useSelector((state: RootState) => state.settings)
-    const [selectedTemplate, setSelectedTemplate] = useState(template)
 
+    // Selecting a template applies it immediately and closes the modal.
     const handleSelectTemplate = (templateId: string) => {
-        setSelectedTemplate(templateId)
-    }
-
-    const handleApplyTemplate = () => {
-        dispatch(setTemplate({ template: selectedTemplate }))
-        onClose()
-    }
-
-    const onClose = () => {
+        dispatch(setTemplate({ template: templateId }))
         dispatch(setTemplatesModal(false))
     }
 
@@ -64,44 +72,29 @@ export default function TemplatesModal({ }: TemplatesModalProps) {
                 </DialogHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 sm:p-6 lg:p-7 xl:p-10 !pt-1">
-                    {templates.map((template) => (
+                    {templates.map((tpl) => (
                         <div
-                            key={template.id}
-                            className={`border rounded-md overflow-hidden cursor-pointer transition-colors ${selectedTemplate === template.id
+                            key={tpl.id}
+                            className={`border rounded-md overflow-hidden cursor-pointer transition-colors ${template === tpl.id
                                 ? "border-teal-500 ring-1 ring-teal-500"
                                 : "border-gray-200 hover:border-teal-500"
                                 }`}
-                            onClick={() => handleSelectTemplate(template.id)}
+                            onClick={() => handleSelectTemplate(tpl.id)}
                         >
                             <div className="relative">
-                                <img src={template.image || "/placeholder.svg"} alt={template.name} className="w-full h-auto" />
-                                {selectedTemplate === template.id && (
+                                <img src={tpl.image || "/placeholder.svg"} alt={tpl.name} className="w-full h-auto" />
+                                {template === tpl.id && (
                                     <div className="absolute top-2 right-2 bg-teal-500 text-white rounded-full p-1">
                                         <Check size={16} />
                                     </div>
                                 )}
                             </div>
                             <div className="p-3 border-t border-gray-200">
-                                <h3 className="font-medium">{template.name}</h3>
-                                <p className="text-sm text-gray-500">{template.description}</p>
+                                <h3 className="font-medium">{tpl.name}</h3>
+                                <p className="text-sm text-gray-500">{tpl.description}</p>
                             </div>
                         </div>
                     ))}
-                </div>
-
-                <div className="flex justify-end p-4 border-t border-gray-200">
-                    <Button variant="outline" onClick={() => dispatch(setTemplatesModal(false))} className="mr-2 text-base py-2.5 px-3.5 cursor-pointer rounded-sm font-rubik font-medium transition-all duration-300 ease-in-out">
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            dispatch(setTemplate({ template: selectedTemplate }))
-                            dispatch(setTemplatesModal(false))
-                        }}
-                        className="text-base py-2.5 px-3.5 text-white bg-[#2dc08d] hover:bg-[#57cda4] border-none cursor-pointer rounded-sm font-rubik font-medium transition-all duration-300 ease-in-out"
-                    >
-                        Apply Template
-                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

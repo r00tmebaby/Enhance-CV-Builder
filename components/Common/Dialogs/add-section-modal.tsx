@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { SectionTypeEnum, type Section } from "@/lib/types"
 import type { RootState } from "@/lib/store"
 import { getDefaultSection } from "@/lib/utils/sectionDefaults"
-import { Award } from "lucide-react"
+import { Award, Zap, BookOpen, PenLine } from "lucide-react"
 
 type AddSectionModalProps = {}
 
@@ -155,6 +155,164 @@ const sectionTypes = [
             </div>
         ),
     },
+    {
+        title: "Training / Courses",
+        type: SectionTypeEnum.TRAINING,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">TRAINING / COURSES</div>
+                <div className="font-medium">Creative Writing</div>
+                <div className="text-xs text-teal-600">Coursera</div>
+                <div className="text-xs text-gray-500">2021 – 2022</div>
+            </div>
+        ),
+    },
+    {
+        title: "Publications",
+        type: SectionTypeEnum.PUBLICATIONS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">PUBLICATIONS</div>
+                <div className="font-medium">Dublin 101</div>
+                <div className="text-xs text-teal-600">Dublin Globe</div>
+                <div className="text-xs text-gray-500">www.dublinglobe.com/101</div>
+            </div>
+        ),
+    },
+    {
+        title: "Awards",
+        type: SectionTypeEnum.AWARDS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">AWARDS</div>
+                <div className="flex items-start gap-2">
+                    <div className="bg-teal-100 text-teal-500 rounded-full p-2 flex-shrink-0"><Award size={16} /></div>
+                    <div>
+                        <div className="font-medium">Dean's List</div>
+                        <div className="text-xs text-gray-600">Cornell School of Engineering</div>
+                    </div>
+                </div>
+            </div>
+        ),
+    },
+    {
+        title: "References",
+        type: SectionTypeEnum.REFERENCES,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">REFERENCES</div>
+                <div className="font-medium">Thomas Brown</div>
+                <div className="text-xs text-gray-600">thomas.brown@gmail.com</div>
+                <div className="text-xs text-gray-600">1-503-254-1000</div>
+            </div>
+        ),
+    },
+    {
+        title: "Strengths",
+        type: SectionTypeEnum.STRENGTHS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">STRENGTHS</div>
+                <div className="flex items-start gap-2">
+                    <div className="bg-teal-100 text-teal-500 rounded-full p-2 flex-shrink-0"><Zap size={16} /></div>
+                    <div>
+                        <div className="font-medium">Go-getter</div>
+                        <div className="text-xs text-gray-600">Persistent and driven.</div>
+                    </div>
+                </div>
+            </div>
+        ),
+    },
+    {
+        title: "My Life Philosophy",
+        type: SectionTypeEnum.PHILOSOPHY,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">MY LIFE PHILOSOPHY</div>
+                <div className="font-semibold italic text-teal-600">"…then you win."</div>
+                <div className="text-xs text-gray-600 text-right mt-1">Mahatma Gandhi</div>
+            </div>
+        ),
+    },
+    {
+        title: "Books",
+        type: SectionTypeEnum.BOOKS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">BOOKS</div>
+                <div className="flex gap-2">
+                    <div className="w-10 h-14 bg-gray-200 rounded-sm flex items-center justify-center text-gray-400"><BookOpen size={16} /></div>
+                    <div className="w-10 h-14 bg-gray-200 rounded-sm flex items-center justify-center text-gray-400"><BookOpen size={16} /></div>
+                </div>
+            </div>
+        ),
+    },
+    {
+        title: "Custom",
+        type: SectionTypeEnum.CUSTOM,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">CUSTOM TITLE</div>
+                <div className="flex items-start gap-2">
+                    <div className="bg-teal-100 text-teal-500 rounded-full p-2 flex-shrink-0"><Award size={16} /></div>
+                    <div>
+                        <div className="font-medium">Inspired &amp; Challenged</div>
+                        <div className="text-xs text-gray-600">Self-employed</div>
+                    </div>
+                </div>
+            </div>
+        ),
+    },
+    {
+        title: "Your Signature",
+        type: SectionTypeEnum.SIGNATURE,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">SIGNATURE</div>
+                <div className="flex items-center gap-2 text-gray-500 text-sm border border-dashed border-gray-300 rounded-md px-3 py-4 justify-center">
+                    <PenLine size={16} /> Upload signature
+                </div>
+            </div>
+        ),
+    },
+    {
+        title: "Additional Experience",
+        type: SectionTypeEnum.PROJECTS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">ADDITIONAL EXPERIENCE</div>
+                <div className="font-medium">Deputy Finance Director</div>
+                <div className="text-xs text-teal-600">City of New York</div>
+                <div className="text-xs text-gray-500">2017 – 2019</div>
+            </div>
+        ),
+    },
+    {
+        title: "Additional Skills",
+        type: SectionTypeEnum.SKILLS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">ADDITIONAL SKILLS</div>
+                <div className="flex flex-wrap gap-2">
+                    <span className="px-2 py-1 bg-gray-100 text-xs rounded">ReactJS</span>
+                    <span className="px-2 py-1 bg-gray-100 text-xs rounded">MongoDB</span>
+                    <span className="px-2 py-1 bg-gray-100 text-xs rounded">Angular 2</span>
+                </div>
+            </div>
+        ),
+    },
+    {
+        title: "Additional Publications",
+        type: SectionTypeEnum.PUBLICATIONS,
+        preview: (
+            <div>
+                <div className="uppercase font-bold border-b border-gray-800 mb-2">ADDITIONAL PUBLICATIONS</div>
+                <div className="font-medium">Dublin 101</div>
+                <div className="text-xs text-teal-600">Dublin Globe</div>
+                <div className="text-xs text-gray-500">An intro to the startup ecosystem.</div>
+            </div>
+        ),
+    },
 ]
 
 export default function AddSectionModal({ }: AddSectionModalProps) {
@@ -162,10 +320,9 @@ export default function AddSectionModal({ }: AddSectionModalProps) {
     const { showAddSectionModal, addSectionColumn } = useSelector((state: RootState) => state.settings)
     const [selectedType, setSelectedType] = useState("")
 
-    const handleAddSection = (sectionType: string) => {
-        const sectionMeta = sectionTypes.find((s) => s.type === sectionType)
-        if (!sectionMeta) return
-
+    const handleAddSection = (sectionMeta: (typeof sectionTypes)[number]) => {
+        // Several cards may map to the same type (e.g. "Additional Skills"), so
+        // build the section from the clicked card rather than looking up by type.
         const section = getDefaultSection(sectionMeta.type, addSectionColumn, sectionMeta.title.toUpperCase())
         if (section) {
             dispatch(addSection({ section, column: addSectionColumn }))
@@ -191,8 +348,8 @@ export default function AddSectionModal({ }: AddSectionModalProps) {
                                 selectedType === section.title ? "border-teal-500 ring-1 ring-teal-500" : "border-gray-200",
                             )}
                             onClick={() => {
-                                setSelectedType(section.type)
-                                handleAddSection(section.type)
+                                setSelectedType(section.title)
+                                handleAddSection(section)
                             }}
                         >
                             <div className="p-4 h-full">{section.preview}</div>

@@ -19,6 +19,7 @@ interface ExtendedSectionProps extends SectionProps {
 export default function SkillsSection({ section, isActive, darkMode = false, handleEntryToggle, handleContextMenu }: ExtendedSectionProps) {
     const dispatch = useDispatch()
     const activeSection = useSelector((state: RootState) => state.resume.activeSection)
+    const primaryColor = useSelector((state: RootState) => state.settings.primaryColor)
     const skillItemRef = useRef<HTMLDivElement>(null)
     const sectionRef = useRef<HTMLDivElement>(null)
 
@@ -104,7 +105,8 @@ export default function SkillsSection({ section, isActive, darkMode = false, han
                             <EditableText
                                 value={skillGroupItem.groupName ?? ''}
                                 onChange={(value) => handleEntryUpdate(skillGroupItem.id, value)}
-                                className={cn("editable-field text-custom-teal", darkMode && section.column === 'right' && "!text-white")}
+                                className={cn("editable-field", darkMode && section.column === 'right' && "!text-white")}
+                                style={darkMode && section.column === 'right' ? undefined : { color: primaryColor }}
                                 placeholder="Group Title"
                             />
                         </div>

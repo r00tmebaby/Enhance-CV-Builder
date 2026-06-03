@@ -10,6 +10,8 @@ import DesignFontPanel from "@/components/Common/Design/design-font-panel"
 import ResumeTemplateDoubleColumn from "@/components/ResumeTemplates/resume-template-double-column"
 import ResumeTemplateElegant from "@/components/ResumeTemplates/resume-template-elegant"
 import ResumeTemplateLeftSidebar from "@/components/ResumeTemplates/resume-template-left-sidebar"
+import ResumeTemplateClassic from "@/components/ResumeTemplates/resume-template-classic"
+import { getTemplateLayout } from "@/lib/features/settings/templateDefaults"
 import { cn } from "@/lib/utils"
 import { getCv, saveCv } from "@/lib/client/api"
 import { hydrateFromSnapshot, setHistory } from "@/lib/features/resume/resumeSlice"
@@ -75,11 +77,14 @@ export default function ResumeBuilder() {
   }, [currentCvId, dispatch, template])
 
   const renderTemplate = () => {
-    switch (template) {
+    // Resolve by layout family so colour variants (e.g. classic-navy) share a component.
+    switch (getTemplateLayout(template)) {
       case "elegant":
         return <ResumeTemplateElegant resumeRef={resumeRef} />
       case "left-sidebar":
         return <ResumeTemplateLeftSidebar resumeRef={resumeRef} />
+      case "classic":
+        return <ResumeTemplateClassic resumeRef={resumeRef} />
       case "double-column":
       default:
         return <ResumeTemplateDoubleColumn resumeRef={resumeRef} />

@@ -27,6 +27,7 @@ const initialState: SettingsState = {
     overlayX: 85,
     overlayY: 15,
     overlayPositioning: false,
+    photoPositioning: false,
     showDesignPanel: false,
     showTemplatesModal: false,
     showAddSectionModal: false,
@@ -69,6 +70,7 @@ export const settingsSlice = createSlice({
                 showAddSectionModal,
                 addSectionColumn,
                 overlayPositioning,
+                photoPositioning,
                 currentCvId,
                 showHistoryModal,
                 ...rest
@@ -95,14 +97,16 @@ export const settingsSlice = createSlice({
 
         setTemplate: (state, action: PayloadAction<{ template: string }>) => {
             state.template = action.payload.template
-            // Apply per-template defaults as baseline (without changing user's explicit overrides later)
+            // Selecting a template is an explicit choice of look, so apply its
+            // layout baseline directly. Font multipliers and colors set via the
+            // Design panel remain user-adjustable afterwards.
             const tpl = getTemplateDefaults(action.payload.template as any)
             if (tpl) {
-                // Only set baseline if current values equal previous global defaults
-                if (state.pageMargins === 36) state.pageMargins = tpl.pageMargins
-                if (state.sectionSpacing === 24) state.sectionSpacing = tpl.sectionSpacing
+                state.pageMargins = tpl.pageMargins
+                state.sectionSpacing = tpl.sectionSpacing
                 state.headingColor = tpl.headingColor
-                // Keep font multipliers; users can still change them via UI
+                if (tpl.primaryColor) state.primaryColor = tpl.primaryColor
+                if (tpl.sidebar) state.leftSidebarBgColor = tpl.sidebar.bgColor
             }
         },
 
@@ -199,6 +203,9 @@ export const settingsSlice = createSlice({
         setOverlayPositioning: (state, action: PayloadAction<boolean>) => {
             state.overlayPositioning = action.payload
         },
+        setPhotoPositioning: (state, action: PayloadAction<boolean>) => {
+            state.photoPositioning = action.payload
+        },
 
         setCurrentCvId: (state, action: PayloadAction<string | null>) => {
             state.currentCvId = action.payload
@@ -236,6 +243,7 @@ export const {
     setOverlayScale,
     setOverlayPosition,
     setOverlayPositioning,
+    setPhotoPositioning,
     setCurrentCvId,
     setShowHistoryModal,
     hydrateSettings,

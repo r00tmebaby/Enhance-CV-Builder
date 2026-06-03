@@ -17,9 +17,14 @@ interface HeaderSettingsPanelProps {
     }
     uppercaseName: boolean
     roundPhoto: boolean
+    photoPositioning: boolean
+    photoAlign: "left" | "center" | "right"
     onToggleVisibility: (field: string, value: boolean) => void
     onToggleUppercase: (value: boolean) => void
     onTogglePhotoStyle: (value: boolean) => void
+    onTogglePhotoPositioning: (value: boolean) => void
+    onSetPhotoAlign: (value: "left" | "center" | "right") => void
+    onResetPhotoLayout: () => void
     onClose: () => void
 }
 
@@ -27,9 +32,14 @@ export default function HeaderSettingsPanel({
     visibility,
     uppercaseName,
     roundPhoto,
+    photoPositioning,
+    photoAlign,
     onToggleVisibility,
     onToggleUppercase,
     onTogglePhotoStyle,
+    onTogglePhotoPositioning,
+    onSetPhotoAlign,
+    onResetPhotoLayout,
     onClose,
 }: HeaderSettingsPanelProps) {
     const panelRef = useRef<HTMLDivElement>(null)
@@ -175,6 +185,44 @@ export default function HeaderSettingsPanel({
                         </div>
                     </div>
                 </div>
+
+                {visibility.photo && (
+                    <div className="mt-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="move-photo" className="text-sm">Move / resize photo</Label>
+                            <Switch
+                                id="move-photo"
+                                checked={photoPositioning}
+                                onCheckedChange={(checked) => onTogglePhotoPositioning(checked)}
+                                className="data-[state=checked]:bg-teal-500"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm">Align</Label>
+                            <div className="flex items-center gap-1">
+                                {(["left", "center", "right"] as const).map((a) => (
+                                    <button
+                                        key={a}
+                                        type="button"
+                                        onClick={() => onSetPhotoAlign(a)}
+                                        className={`px-2 py-1 text-xs rounded border capitalize ${photoAlign === a ? "border-teal-500 bg-teal-50 text-teal-600" : "border-gray-300 text-gray-600"}`}
+                                    >
+                                        {a}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {photoPositioning && (
+                            <p className="text-xs text-gray-500">Drag the photo to move, drag its corner to resize, hold Shift and drag to reposition the image inside the frame.</p>
+                        )}
+
+                        <button type="button" onClick={onResetPhotoLayout} className="text-xs text-gray-500 underline hover:text-gray-700">
+                            Reset photo position &amp; size
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -398,6 +398,16 @@ h6 {
   color: var(--resume-heading-color, #3e3e3e);
 }
 
+/* Classic single-column template: centered titles with an accent rule, and an
+   accent-coloured name/role in the centered header. */
+.tpl-classic .resume-section-title {
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid var(--resume-accent-color, #0e9488);
+  padding-bottom: 6px;
+}
+
 .text-custom-teal {
   color: rgb(0, 140, 255);
 }

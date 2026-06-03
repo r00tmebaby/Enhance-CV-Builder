@@ -42,3 +42,15 @@ next-env.d.ts
 
 # local video
 /public/video/
+
+# IDE
+/.idea/
+
+# local saved CV documents (personal data - never commit)
+/data/
+
+# local archives
+*.tar.gz
+
+# design reference screenshots (not part of the app)
+/Templates images/

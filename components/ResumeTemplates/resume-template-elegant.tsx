@@ -7,11 +7,11 @@ import { useSelector, useDispatch } from "react-redux"
 import { reorderSections, upsertActiveSection } from "@/lib/features/resume/resumeSlice"
 import ResumeSection from "@/components/resume-section"
 import { Button } from "@/components/ui/button"
-import { Camera, Plus, User } from "lucide-react"
 import type { RootState } from "@/lib/store"
 import type { Section } from "@/lib/types"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import ResumeHeader from "@/components/resume-header"
+import ProfilePhoto from "@/components/Common/Header/profile-photo"
 import { setAddSectionModal } from "@/lib/features/settings/settingsSlice"
 import { cn, resolveFontFamily, getPageBackgroundStyle, getOverlayStyle } from "@/lib/utils"
 import { getTemplateDefaults } from "@/lib/features/settings/templateDefaults"
@@ -30,7 +30,7 @@ export default function ResumeTemplateElegant({ resumeRef }: ResumeTemplateProps
     const [draggedSection, setDraggedSection] = useState<string | null>(null)
 
     // Elegant-specific defaults and layout tweaks
-    const tpl = getTemplateDefaults("elegant")
+    const tpl = getTemplateDefaults("elegant")!
     const DEFAULT_GLOBAL_MARGINS = 36
     const DEFAULT_GLOBAL_SPACING = 24
     // If user hasn't changed from global defaults, prefer template defaults; otherwise respect user values
@@ -38,9 +38,9 @@ export default function ResumeTemplateElegant({ resumeRef }: ResumeTemplateProps
     const effectiveSectionSpacing = sectionSpacing === DEFAULT_GLOBAL_SPACING ? tpl.sectionSpacing : sectionSpacing
     const effectiveFontSizeRem = (.9) * fontSize
     const effectiveLineHeight = (.8) * lineHeight
-    const sidebarWidth = 220
-    const sidebarBg = "#5a163fff"
-    const sidebarText = "#12801fff" 
+    const sidebarWidth = tpl.sidebar?.widthPx ?? 220
+    const sidebarBg = tpl.sidebar?.bgColor ?? "#22405c"
+    const sidebarText = tpl.sidebar?.textColor ?? "#ffffff"
     const rightColumnFontSizeRem = Math.max(0.3, fontSize * 0.72) // 70% of main, clamped
 
     const handleHeaderClick = () => {
@@ -51,12 +51,7 @@ export default function ResumeTemplateElegant({ resumeRef }: ResumeTemplateProps
         dispatch(setAddSectionModal({ isOpen: true, column }))
     }
 
-    const handlePhotoClick = () => {
-        if (activeSection?.id === null) {
-            const event = new CustomEvent("openPhotoUpload", {})
-            window.dispatchEvent(event)
-        }
-    }
+    const photoAlignJustify = header.photoAlign === "left" ? "justify-start" : header.photoAlign === "right" ? "justify-end" : "justify-center"
 
     const leftSections = sections.filter((section) => section.column === "left")
     const rightSections = sections.filter((section) => section.column === "right")
@@ -164,23 +159,11 @@ export default function ResumeTemplateElegant({ resumeRef }: ResumeTemplateProps
                     </DragDropContext>
                 </div>
 
-                <div className="right-column-side relative z-[1] px-3 py-3 flex flex-col items-center" style={{ fontSize: `${rightColumnFontSizeRem}rem`, backgroundColor: sidebarBg, color: sidebarText, ['--resume-heading-color' as any]: '#ffffff' }}>
-                    {/* Profile photo in sidebar */}
+                <div className="right-column-side group/photobox relative z-[1] px-3 py-3 flex flex-col items-center" style={{ fontSize: `${rightColumnFontSizeRem}rem`, backgroundColor: sidebarBg, color: sidebarText, ['--resume-heading-color' as any]: '#ffffff' }}>
+                    {/* Profile photo (movable/resizable via header settings). */}
                     {header.visibility.photo && (
-                        <div className="mb-4" onClick={handleHeaderClick}>
-                            <div
-                                className={`w-32 h-32 ${header.roundPhoto ? "rounded-full" : "rounded-md"
-                                    } overflow-hidden bg-gray-200 cursor-pointer`}
-                                onClick={handlePhotoClick}
-                            >
-                                {header.photoUrl ? (
-                                    <img src={header.photoUrl || "/placeholder.svg"} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <User className="w-12 h-12" />
-                                    </div>
-                                )}
-                            </div>
+                        <div className={cn("mb-4 w-full flex", photoAlignJustify)}>
+                            <ProfilePhoto defaultSize={128} />
                         </div>
                     )}
 

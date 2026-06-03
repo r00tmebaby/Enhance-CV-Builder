@@ -43,6 +43,16 @@ import AchievementsSection from "./Sections/Achievements/achievements-section"
 import AchievementsSettingsPanel from "./Sections/Achievements/SettingsPannel/achievements-settings-panel"
 import IndustryExpertiseSection from "@/components/Sections/IndustryExpertise/industry-expertise-section"
 import IndustryExpertiseSettingsPanel from "@/components/Sections/IndustryExpertise/SettingsPannel/industry-expertise-settings-panel"
+import TrainingSection from "@/components/Sections/Training/training-section"
+import PublicationsSection from "@/components/Sections/Publications/publications-section"
+import AwardsSection from "@/components/Sections/Awards/awards-section"
+import ReferencesSection from "@/components/Sections/References/references-section"
+import StrengthsSection from "@/components/Sections/Strengths/strengths-section"
+import PhilosophySection from "@/components/Sections/Philosophy/philosophy-section"
+import BooksSection from "@/components/Sections/Books/books-section"
+import CustomSection from "@/components/Sections/Custom/custom-section"
+import SignatureSection from "@/components/Sections/Signature/signature-section"
+import VisibilitySettingsPanel from "@/components/Sections/Shared/visibility-settings-panel"
 
 interface ResumeSectionProps {
     section: Section
@@ -50,6 +60,60 @@ interface ResumeSectionProps {
     onDragStart?: (sectionId: string) => void
     darkMode?: boolean
 };
+
+// Section types whose entries live as a flat list under section.content[type]
+// and are edited generically via updateSectionContent (no dedicated reducer).
+const GENERIC_LIST_TYPES = [
+    SectionTypeEnum.TRAINING,
+    SectionTypeEnum.PUBLICATIONS,
+    SectionTypeEnum.AWARDS,
+    SectionTypeEnum.REFERENCES,
+    SectionTypeEnum.STRENGTHS,
+    SectionTypeEnum.PHILOSOPHY,
+    SectionTypeEnum.BOOKS,
+    SectionTypeEnum.CUSTOM,
+]
+
+// Visibility toggles shown in the per-entry settings panel for the new sections.
+const GENERIC_VISIBILITY_FIELDS: Partial<Record<SectionTypeEnum, { key: string; label: string }[]>> = {
+    [SectionTypeEnum.TRAINING]: [
+        { key: "institution", label: "Show Institution" },
+        { key: "period", label: "Show Period" },
+        { key: "description", label: "Show Description" },
+    ],
+    [SectionTypeEnum.PUBLICATIONS]: [
+        { key: "publisher", label: "Show Publisher" },
+        { key: "period", label: "Show Period" },
+        { key: "link", label: "Show Link" },
+        { key: "description", label: "Show Description" },
+    ],
+    [SectionTypeEnum.AWARDS]: [
+        { key: "icon", label: "Show Icon" },
+        { key: "issuer", label: "Show Issuer" },
+    ],
+    [SectionTypeEnum.REFERENCES]: [
+        { key: "company", label: "Show Company" },
+        { key: "email", label: "Show Email" },
+        { key: "phone", label: "Show Phone" },
+    ],
+    [SectionTypeEnum.STRENGTHS]: [
+        { key: "icon", label: "Show Icon" },
+        { key: "description", label: "Show Description" },
+    ],
+    [SectionTypeEnum.CUSTOM]: [
+        { key: "icon", label: "Show Icon" },
+        { key: "subtitle", label: "Show Subtitle" },
+        { key: "period", label: "Show Period" },
+        { key: "description", label: "Show Description" },
+    ],
+    [SectionTypeEnum.PHILOSOPHY]: [
+        { key: "author", label: "Show Author" },
+    ],
+    [SectionTypeEnum.BOOKS]: [
+        { key: "cover", label: "Show Cover" },
+        { key: "author", label: "Show Author" },
+    ],
+}
 
 export default function ResumeSection({ section, isActive, onDragStart, darkMode = false }: ResumeSectionProps) {
     const dispatch = useDispatch()
@@ -123,6 +187,14 @@ export default function ResumeSection({ section, isActive, onDragStart, darkMode
     const handleAddEntry = () => {
         const entry = getDefaultEntry(section.type)
         if (!entry) return
+
+        // New list-style sections are appended generically.
+        if ((GENERIC_LIST_TYPES as SectionTypeEnum[]).includes(section.type)) {
+            const key = section.type as keyof typeof section.content
+            const list = ((section.content as any)[key] ?? []) as any[]
+            dispatch(updateSectionContent({ sectionId: section.id, content: { ...section.content, [key]: [...list, entry] } }))
+            return
+        }
 
         switch (section.type) {
             case SectionTypeEnum.EDUCATION:
@@ -218,6 +290,14 @@ export default function ResumeSection({ section, isActive, onDragStart, darkMode
         dispatch(updateSectionContent({ sectionId: section.id, content: { ...section.content, my_time: next } }))
     }
 
+    const handleToggleGenericVisibility = (field: string, value: boolean) => {
+        if (!activeSection?.entryId) return
+        const key = section.type as keyof typeof section.content
+        const list = ((section.content as any)[key] ?? []) as any[]
+        const next = list.map((i) => i.id === activeSection.entryId ? { ...i, visibility: { ...(i.visibility ?? {}), [field]: value } } : i)
+        dispatch(updateSectionContent({ sectionId: section.id, content: { ...section.content, [key]: next } }))
+    }
+
     const handleToggleVolunteeringVisibility = (entryId: string, field: keyof NonNullable<VolunteeringItem['visibility']>, value: boolean) => {
         const list = section.content.volunteering ?? []
         const next: VolunteeringItem[] = list.map((i) => {
@@ -281,6 +361,24 @@ export default function ResumeSection({ section, isActive, onDragStart, darkMode
                 return <MyTimeSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
             case SectionTypeEnum.INDUSTRY_EXPERTISE:
                 return <IndustryExpertiseSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.TRAINING:
+                return <TrainingSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.PUBLICATIONS:
+                return <PublicationsSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.AWARDS:
+                return <AwardsSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.REFERENCES:
+                return <ReferencesSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.STRENGTHS:
+                return <StrengthsSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.PHILOSOPHY:
+                return <PhilosophySection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.BOOKS:
+                return <BooksSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.CUSTOM:
+                return <CustomSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
+            case SectionTypeEnum.SIGNATURE:
+                return <SignatureSection section={section} isActive={isActive} darkMode={darkMode} handleEntryToggle={handleEntryToggle} handleContextMenu={handleContextMenu} />
             default:
                 return null
         }
@@ -376,6 +474,15 @@ export default function ResumeSection({ section, isActive, onDragStart, darkMode
                                 <VolunteeringSettingsPanel
                                     item={section.content.volunteering?.find((e) => e.id === activeSection.entryId) || null}
                                     onToggleVisibility={(field, value) => handleToggleVolunteeringVisibility(activeSection.entryId!, field, value)}
+                                    onClose={() => setShowVisibilityMenu(false)}
+                                />
+                            )}
+
+                            {GENERIC_VISIBILITY_FIELDS[section.type as SectionTypeEnum] && (
+                                <VisibilitySettingsPanel
+                                    fields={GENERIC_VISIBILITY_FIELDS[section.type as SectionTypeEnum]!}
+                                    visibility={((section.content as any)[section.type] ?? []).find((e: any) => e.id === activeSection.entryId)?.visibility}
+                                    onToggle={handleToggleGenericVisibility}
                                     onClose={() => setShowVisibilityMenu(false)}
                                 />
                             )}

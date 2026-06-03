@@ -9,30 +9,34 @@ import {
     toggleUppercaseName,
     togglePhotoStyle,
     setHeader,
+    updateHeaderPhotoLayout,
 } from "@/lib/features/resume/resumeSlice"
+import { setPhotoPositioning } from "@/lib/features/settings/settingsSlice"
 import { Camera, Link, LocateIcon, Mail, MapPin, Phone, Settings, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import EditableText from "@/components/Shared/editable-text"
 import HeaderSettingsPanel from "@/components/Common/Header/header-settings-panel"
-import PhotoUploadModal from "@/components/Common/Dialogs/photo-upload-modal"
+import ProfilePhoto from "@/components/Common/Header/profile-photo"
 import { cn } from "@/lib/utils"
 import type { RootState } from "@/lib/store"
 
 interface ResumeHeaderProps {
     isActive: boolean
     hidePhoto?: boolean
+    centered?: boolean
 }
 
 const STORAGE_KEY = 'resume_header_data'
 
-export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHeaderProps) {
+export default function ResumeHeader({ isActive, hidePhoto = false, centered = false }: ResumeHeaderProps) {
     const dispatch = useDispatch()
     const header = useSelector((state: RootState) => state.resume.header)
-    const { primaryColor, currentCvId } = useSelector((state: RootState) => state.settings)
+    const { primaryColor, currentCvId, photoPositioning } = useSelector((state: RootState) => state.settings)
     const [isHovered, setIsHovered] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
-    const [showPhotoUpload, setShowPhotoUpload] = useState(false)
     const settingsRef = useRef<HTMLDivElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const photoAlignJustify = header.photoAlign === "left" ? "justify-start" : header.photoAlign === "right" ? "justify-end" : "justify-center"
 
     // Load data from localStorage on mount (only for unsaved sessions), without creating history steps
     useEffect(() => {
@@ -58,15 +62,11 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
         }
     }, [header])
 
+    // Sidebar-based templates dispatch this event from their own photo element.
     useEffect(() => {
-        const handleOpenPhotoUpload = () => {
-            setShowPhotoUpload(true)
-        }
-
+        const handleOpenPhotoUpload = () => fileInputRef.current?.click()
         window.addEventListener("openPhotoUpload", handleOpenPhotoUpload)
-        return () => {
-            window.removeEventListener("openPhotoUpload", handleOpenPhotoUpload)
-        }
+        return () => window.removeEventListener("openPhotoUpload", handleOpenPhotoUpload)
     }, [])
 
     const handleFieldChange = (field: string, value: string) => {
@@ -85,9 +85,18 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
         dispatch(togglePhotoStyle({ value }))
     }
 
-    const handlePhotoUpload = (photoUrl: string) => {
-        dispatch(uploadProfilePhoto({ photoUrl }))
-        setShowPhotoUpload(false)
+    // Open the OS file picker directly when the photo is clicked.
+    const openPhotoPicker = () => fileInputRef.current?.click()
+
+    const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (!file.type.startsWith("image/")) { alert("Please select a valid image file"); return }
+        if (file.size > 5 * 1024 * 1024) { alert("Image size should be less than 5MB"); return }
+        const reader = new FileReader()
+        reader.onload = () => dispatch(uploadProfilePhoto({ photoUrl: reader.result as string }))
+        reader.readAsDataURL(file)
+        e.target.value = "" // allow re-selecting the same file
     }
 
     // Add function to clear all data
@@ -102,15 +111,15 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
     return (
         <div
             className={cn(
-                "relative border border-transparent rounded-md transition-all",
+                "relative border border-transparent rounded-md transition-all group/photobox",
                 isActive && "ring-1 ring-teal-500 resume-header-active",
                 (isActive || isHovered) && "border-gray-200",
             )}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="p-4 flex flex-col-reverse lg:flex-row justify-between gap-3 lg:gap-0 items-start">
-                <div className="flex-1">
+            <div className={cn("p-4 flex gap-3", centered ? "flex-col-reverse items-center text-center" : "flex-col-reverse lg:flex-row justify-between lg:gap-0 items-start")}>
+                <div className={cn("flex-1", centered && "w-full")}>
                     <div className={cn("font-bold text-3xl", header.uppercaseName && "uppercase")}>
                         <EditableText
                             value={header.name}
@@ -131,7 +140,7 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
                         </div>
                     )}
 
-                    <div className="flex flex-wrap gap-4 mt-3">
+                    <div className={cn("flex flex-wrap gap-4 mt-3", centered && "justify-center")}>
                         {header.visibility.phone && header.phone !== "" && (
                             <div className="flex items-center text-gray-600">
                                 <Phone className="w-4 h-4 mr-1" />
@@ -207,21 +216,13 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
                 </div>
 
                 {header.visibility.photo && !hidePhoto && (
-                    <div
-                        className={cn(
-                            "w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden cursor-pointer",
-                            header.roundPhoto ? "rounded-full" : "rounded-md",
-                        )}
-                        onClick={() => setShowPhotoUpload(true)}
-                    >
-                        {header.photoUrl ? (
-                            <img src={header.photoUrl} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="flex flex-col items-center justify-center text-gray-400">
-                                <Camera size={24} />
-                            </div>
-                        )}
-                    </div>
+                    centered ? (
+                        <div className={cn("w-full flex", photoAlignJustify)}>
+                            <ProfilePhoto defaultSize={104} />
+                        </div>
+                    ) : (
+                        <ProfilePhoto defaultSize={96} />
+                    )
                 )}
             </div>
 
@@ -232,7 +233,7 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full bg-white border shadow-sm"
-                            onClick={() => setShowPhotoUpload(true)}
+                            onClick={openPhotoPicker}
                         >
                             <Camera size={14} />
                         </Button>
@@ -254,23 +255,26 @@ export default function ResumeHeader({ isActive, hidePhoto = false }: ResumeHead
                         visibility={header.visibility}
                         uppercaseName={header.uppercaseName}
                         roundPhoto={header.roundPhoto}
+                        photoPositioning={!!photoPositioning}
+                        photoAlign={header.photoAlign ?? "center"}
                         onToggleVisibility={handleToggleVisibility}
                         onToggleUppercase={handleToggleUppercase}
                         onTogglePhotoStyle={handleTogglePhotoStyle}
+                        onTogglePhotoPositioning={(v) => dispatch(setPhotoPositioning(v))}
+                        onSetPhotoAlign={(a) => dispatch(updateHeaderPhotoLayout({ photoAlign: a }))}
+                        onResetPhotoLayout={() => dispatch(updateHeaderPhotoLayout({ photoSize: undefined, photoPosX: 0, photoPosY: 0, photoOffsetX: 50, photoOffsetY: 50, photoAlign: "center" }))}
                         onClose={() => setShowSettings(false)}
                     />
                 </div>
             )}
 
-            {showPhotoUpload && (
-                <PhotoUploadModal
-                    isOpen={showPhotoUpload}
-                    onClose={() => setShowPhotoUpload(false)}
-                    onUpload={handlePhotoUpload}
-                    currentPhotoUrl={header.photoUrl}
-                    storageKey="resume_profile_photo" // Separate key for just the photo
-                />
-            )}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoFileChange}
+            />
         </div>
     )
 }
