@@ -34,14 +34,17 @@ export async function createCv(state: RootState, name?: string): Promise<{ id: s
   return res.json()
 }
 
-export async function saveCv(id: string, state: RootState, name?: string): Promise<CvDocument> {
+// snapshot=true records a frozen restore point in history (manual Save).
+// Without it (autosave) the current version is updated in place, preserving its name.
+export async function saveCv(id: string, state: RootState, opts?: { name?: string; snapshot?: boolean }): Promise<CvDocument> {
   const res = await fetch(`/api/cv/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       resume: state.resume,
       settings: state.settings,
-      name,
+      name: opts?.name,
+      snapshot: !!opts?.snapshot,
       resumeHistory: state.resume.history,
     }),
   })

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import EditableText from "@/components/Shared/editable-text"
 import HeaderSettingsPanel from "@/components/Common/Header/header-settings-panel"
 import ProfilePhoto from "@/components/Common/Header/profile-photo"
+import { useDialogs } from "@/components/Common/Dialogs/dialog-provider"
 import { cn } from "@/lib/utils"
 import type { RootState } from "@/lib/store"
 
@@ -36,6 +37,7 @@ export default function ResumeHeader({ isActive, hidePhoto = false, centered = f
     const [showSettings, setShowSettings] = useState(false)
     const settingsRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const { toast } = useDialogs()
     const photoAlignJustify = header.photoAlign === "left" ? "justify-start" : header.photoAlign === "right" ? "justify-end" : "justify-center"
 
     // Load data from localStorage on mount (only for unsaved sessions), without creating history steps
@@ -91,21 +93,12 @@ export default function ResumeHeader({ isActive, hidePhoto = false, centered = f
     const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
-        if (!file.type.startsWith("image/")) { alert("Please select a valid image file"); return }
-        if (file.size > 5 * 1024 * 1024) { alert("Image size should be less than 5MB"); return }
+        if (!file.type.startsWith("image/")) { toast("Please select a valid image file", { error: true }); return }
+        if (file.size > 5 * 1024 * 1024) { toast("Image size should be less than 5MB", { error: true }); return }
         const reader = new FileReader()
         reader.onload = () => dispatch(uploadProfilePhoto({ photoUrl: reader.result as string }))
         reader.readAsDataURL(file)
         e.target.value = "" // allow re-selecting the same file
-    }
-
-    // Add function to clear all data
-    const handleClearData = () => {
-        if (confirm('Are you sure you want to clear all resume data?')) {
-            localStorage.removeItem(STORAGE_KEY)
-            // You might want to dispatch actions to reset Redux state too
-            window.location.reload() // Simple way to reset everything
-        }
     }
 
     return (

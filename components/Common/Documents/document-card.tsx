@@ -13,6 +13,9 @@ import { hydrateSettings } from "@/lib/features/settings/settingsSlice"
 import ResumeTemplateDoubleColumn from "@/components/ResumeTemplates/resume-template-double-column"
 import ResumeTemplateElegant from "@/components/ResumeTemplates/resume-template-elegant"
 import ResumeTemplateLeftSidebar from "@/components/ResumeTemplates/resume-template-left-sidebar"
+import ResumeTemplateClassic from "@/components/ResumeTemplates/resume-template-classic"
+import { getTemplateLayout } from "@/lib/features/settings/templateDefaults"
+import { useDialogs } from "@/components/Common/Dialogs/dialog-provider"
 // no need to import app RootState here; preview store is isolated per card
 
 export interface DocSummary {
@@ -38,6 +41,7 @@ function createPreviewStore(previewState: any) {
 
 export default function DocumentCard({ doc, onChange }: { doc: DocSummary; onChange?: () => void }) {
   const router = useRouter()
+  const { confirm, promptText } = useDialogs()
   const [full, setFull] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -97,8 +101,10 @@ export default function DocumentCard({ doc, onChange }: { doc: DocSummary; onCha
     const dispatch = useDispatch()
     useEffect(() => {
       if (!data?.current) return
-      // Ensure settings and resume snapshot are hydrated into the preview store
-      dispatch(hydrateSettings(data.current.settings || {}))
+      // Ensure settings and resume snapshot are hydrated into the preview store.
+      // Force editorZoom=1 so the card's own scale isn't multiplied by the saved
+      // editor zoom (which clipped the preview).
+      dispatch(hydrateSettings({ ...(data.current.settings || {}), editorZoom: 1, photoPositioning: false }))
       dispatch(hydrateFromSnapshot({
         header: data.current.resume?.header || {},
         sections: Array.isArray(data.current.resume?.sections) ? data.current.resume.sections : [],
@@ -110,11 +116,13 @@ export default function DocumentCard({ doc, onChange }: { doc: DocSummary; onCha
   // Picker for template
   const TemplateRenderer = ({ resumeRef }: { resumeRef: React.RefObject<HTMLDivElement | null> }) => {
     const template = (full?.current?.settings?.template as string) || 'double-column'
-    switch (template) {
+    switch (getTemplateLayout(template)) {
       case 'elegant':
         return <ResumeTemplateElegant resumeRef={resumeRef} />
       case 'left-sidebar':
         return <ResumeTemplateLeftSidebar resumeRef={resumeRef} />
+      case 'classic':
+        return <ResumeTemplateClassic resumeRef={resumeRef} />
       default:
         return <ResumeTemplateDoubleColumn resumeRef={resumeRef} />
     }
@@ -122,7 +130,7 @@ export default function DocumentCard({ doc, onChange }: { doc: DocSummary; onCha
 
   const open = () => router.push(`/?cv=${doc.id}`)
   const onRename = async () => {
-    const name = prompt("Rename document", doc.name || "Untitled Document")
+    const name = await promptText({ title: "Rename document", label: "Name", defaultValue: doc.name || "Untitled Document", confirmLabel: "Rename" })
     if (!name || !full) return
     try {
       await fetch(`/api/cv/${doc.id}`, {
@@ -137,7 +145,7 @@ export default function DocumentCard({ doc, onChange }: { doc: DocSummary; onCha
     }
   }
   const onDelete = async () => {
-    if (!confirm('Delete this document? This cannot be undone.')) return
+    if (!(await confirm({ title: "Delete document", message: "Delete this document? This cannot be undone.", destructive: true, confirmLabel: "Delete" }))) return
     try {
       await fetch(`/api/cv/${doc.id}`, { method: 'DELETE' })
       if (onChange) onChange()

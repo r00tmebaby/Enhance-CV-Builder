@@ -8,6 +8,7 @@ import { Download, Loader2 } from "lucide-react"
 import html2canvas from "html2canvas-pro"
 import jsPDF from "jspdf"
 import type { RootState } from "@/lib/store"
+import { useDialogs } from "@/components/Common/Dialogs/dialog-provider"
 
 interface PDFExportButtonProps {
     resumeRef: React.RefObject<HTMLDivElement | null>
@@ -16,6 +17,7 @@ interface PDFExportButtonProps {
 export default function PDFExportButton({ resumeRef }: PDFExportButtonProps) {
     const [isExporting, setIsExporting] = useState(false)
     const { header } = useSelector((state: RootState) => state.resume)
+    const { toast } = useDialogs()
 
     const capturePages = async (): Promise<{ dataUrl: string; width: number; height: number }[]> => {
         const container = resumeRef.current
@@ -83,7 +85,7 @@ export default function PDFExportButton({ resumeRef }: PDFExportButtonProps) {
             pdf.save(fileName)
         } catch (e) {
             console.error('Error generating PDF', e)
-            alert('There was an error generating your PDF. Please try again.')
+            toast('There was an error generating your PDF. Please try again.', { error: true })
         } finally {
             setIsExporting(false)
         }

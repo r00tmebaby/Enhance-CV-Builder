@@ -20,6 +20,8 @@ import {
 import { setTemplatesModal, setAddSectionModal, setCurrentCvId, setShowHistoryModal } from "@/lib/features/settings/settingsSlice"
 import { undo, redo } from "@/lib/features/resume/resumeSlice"
 import RearrangeSectionsModal from "@/components/Common/Dialogs/rearrange-sections-modal"
+import SaveDialog from "@/components/Common/Dialogs/save-dialog"
+import { useDialogs } from "@/components/Common/Dialogs/dialog-provider"
 import type { RootState } from "@/lib/store"
 import PDFExportButton from "./Common/ExportResume/pdf-export-button"
 import DesignFontPanel from "@/components/Common/Design/design-font-panel"
@@ -34,7 +36,11 @@ interface SidebarProps {
 export default function Sidebar({ resumeRef }: SidebarProps) {
   const dispatch = useDispatch()
   const [showRearrangeModal, setShowRearrangeModal] = useState(false)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const { toast } = useDialogs()
   const { history } = useSelector((state: RootState) => state.resume)
+  const headerName = useSelector((state: RootState) => state.resume.header.name)
   const { showDesignPanel } = useSelector((state: RootState) => state.settings)
   const { currentCvId } = useSelector((state: RootState) => state.settings)
 
@@ -49,23 +55,27 @@ export default function Sidebar({ resumeRef }: SidebarProps) {
     dispatch(redo())
   }
 
-  const handleSave = async () => {
+  const handleSaveConfirm = async (name: string) => {
     const state = store.getState()
+    setSaving(true)
     try {
-      const name = window.prompt('Name this snapshot (optional):', '') || undefined
       if (!currentCvId) {
         const { id } = await createCv(state, name)
         dispatch(setCurrentCvId(id))
-        // update URL param
         const url = new URL(window.location.href)
         url.searchParams.set("cv", id)
         window.history.replaceState({}, "", url.toString())
       } else {
-        await saveCv(currentCvId, state, name)
+        // Manual save: update the document and add a restore point to History.
+        await saveCv(currentCvId, state, { name, snapshot: true })
       }
+      setShowSaveDialog(false)
+      toast("Saved")
     } catch (e) {
       console.error("Save failed", e)
-      alert("Failed to save CV")
+      toast("Save failed", { error: true })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -129,7 +139,7 @@ export default function Sidebar({ resumeRef }: SidebarProps) {
           <Button
             variant="ghost"
             className="w-auto md:w-full flex items-center justify-center md:justify-start text-sm font-normal cursor-pointer text-[#384347] hover:text-[#5f4dc7]"
-            onClick={handleSave}
+            onClick={() => setShowSaveDialog(true)}
           >
             <Check size={16} className="md:mr-2" />
             <div className="hidden md:flex">Save</div>
@@ -153,6 +163,15 @@ export default function Sidebar({ resumeRef }: SidebarProps) {
       )}
 
       <RearrangeSectionsModal isOpen={showRearrangeModal} onClose={() => setShowRearrangeModal(false)} />
+
+      <SaveDialog
+        open={showSaveDialog}
+        defaultName={headerName && headerName !== "YOUR NAME" ? `${headerName} - Resume` : "My Resume"}
+        saving={saving}
+        onCancel={() => setShowSaveDialog(false)}
+        onConfirm={handleSaveConfirm}
+      />
+
     </>
   )
 }

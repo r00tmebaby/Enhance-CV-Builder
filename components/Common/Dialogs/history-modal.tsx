@@ -9,9 +9,11 @@ import type { RootState } from "@/lib/store"
 import { getCv, renameSnapshot, deleteSnapshot } from "@/lib/client/api"
 import { hydrateFromSnapshot, setHistory } from "@/lib/features/resume/resumeSlice"
 import { hydrateSettings, setShowHistoryModal, setCurrentCvId } from "@/lib/features/settings/settingsSlice"
+import { useDialogs } from "@/components/Common/Dialogs/dialog-provider"
 
 export default function HistoryModal() {
   const dispatch = useDispatch()
+  const { confirm, promptText, toast } = useDialogs()
   const { currentCvId, showHistoryModal } = useSelector((s: RootState) => s.settings)
   const editHistory = useSelector((s: RootState) => s.resume.history)
   const [snapshots, setSnapshots] = useState<any[]>([])
@@ -55,25 +57,25 @@ export default function HistoryModal() {
   }
 
   const rename = async (snap: any) => {
-    const name = prompt('Name this snapshot:', snap.name || '')
+    const name = await promptText({ title: 'Rename snapshot', label: 'Name', defaultValue: snap.name || '', confirmLabel: 'Rename' })
     if (!name || !currentCvId) return
     try {
       const doc = await renameSnapshot(currentCvId, snap.id, name)
       setSnapshots([doc.current, ...(doc.history || [])])
     } catch (e: any) {
-      alert(e?.message || 'Rename failed')
+      toast(e?.message || 'Rename failed', { error: true })
     }
   }
 
   const del = async (snap: any) => {
     if (!currentCvId) return
-    if (!confirm('Delete this snapshot?')) return
+    if (!(await confirm({ title: 'Delete snapshot', message: 'Delete this snapshot?', destructive: true, confirmLabel: 'Delete' }))) return
     try {
       const doc = await deleteSnapshot(currentCvId, snap.id)
       setSnapshots([doc.current, ...(doc.history || [])])
       setSelected({})
     } catch (e: any) {
-      alert(e?.message || 'Delete failed')
+      toast(e?.message || 'Delete failed', { error: true })
     }
   }
 
@@ -97,7 +99,7 @@ export default function HistoryModal() {
     if (!currentCvId) return
     const ids = Object.keys(selected).filter((k) => selected[k])
     if (ids.length === 0) return
-    if (!confirm(`Delete ${ids.length} selected snapshot(s)?`)) return
+    if (!(await confirm({ title: 'Delete snapshots', message: `Delete ${ids.length} selected snapshot(s)?`, destructive: true, confirmLabel: 'Delete' }))) return
     try {
       let doc: any | null = null
       for (const id of ids) {
@@ -106,13 +108,13 @@ export default function HistoryModal() {
       if (doc) setSnapshots([doc.current, ...(doc.history || [])])
       setSelected({})
     } catch (e: any) {
-      alert(e?.message || 'Bulk delete failed')
+      toast(e?.message || 'Bulk delete failed', { error: true })
     }
   }
 
   const clearAllHistory = async () => {
     if (!currentCvId) return
-    if (!confirm('Remove all history snapshots? This keeps the current version.')) return
+    if (!(await confirm({ title: 'Remove all snapshots', message: 'Remove all history snapshots? This keeps the current version.', destructive: true, confirmLabel: 'Remove all' }))) return
     try {
       // load doc to get list of history snapshot ids
       const doc = await getCv(currentCvId)
@@ -124,7 +126,7 @@ export default function HistoryModal() {
       if (latest) setSnapshots([latest.current, ...(latest.history || [])])
       setSelected({})
     } catch (e: any) {
-      alert(e?.message || 'Clear history failed')
+      toast(e?.message || 'Clear history failed', { error: true })
     }
   }
 
@@ -183,7 +185,7 @@ export default function HistoryModal() {
                         dispatch(setHistory({ past: [], future: [] }))
                       }
                     } catch (e: any) {
-                      alert(e?.message || 'Failed to remove steps')
+                      toast(e?.message || 'Failed to remove steps', { error: true })
                     }
                   }}
                 >

@@ -503,14 +503,25 @@ h6 {
     }
 }
 
-/* Prevent layout shift when scrollbars appear/disappear (e.g., on modal open). */
+/* Keep the layout perfectly static when a modal locks page scrolling.
+   1) Reserve the scrollbar gutter on <html> at all times, so the viewport width
+      never changes when a dialog opens (fixed sidebars/header won't jump).
+   2) The scroll lives on <html>; <body> is not a scroll container, so there is
+      no body scrollbar for the dialog lock to remove. */
 html {
-  /* Reserve scrollbar space on the inline (vertical) axis to keep layout stable */
   scrollbar-gutter: stable;
+  overflow-y: auto;
 }
 
-/* Fallback for browsers that don't support scrollbar-gutter */
 body {
-  overflow-y: scroll; /* Always reserve vertical scrollbar width */
   overflow-x: hidden; /* Prevent horizontal page scroll */
+}
+
+/* react-remove-scroll (used by the dialogs) adds compensating padding/margin to
+   the body assuming it removed the scrollbar. Because the gutter above is always
+   reserved, that compensation is what actually shifts the page - neutralize it.
+   The higher specificity (html body…) beats the library's injected !important. */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
 }

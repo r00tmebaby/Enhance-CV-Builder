@@ -37,76 +37,44 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const doc = JSON.parse(raw)
   const body = await req.json()
-  const { resume, settings, resumeHistory, name } = body || {}
+  const { resume, settings, resumeHistory, name, snapshot } = body || {}
     if (!resume?.header || !Array.isArray(resume?.sections)) {
       return NextResponse.json({ error: "Invalid payload: missing resume.header or resume.sections" }, { status: 400 })
     }
 
     const now = Date.now()
-    // append previous current to history (keep last 50)
-    if (doc.current) {
-      doc.history = doc.history || []
-      doc.history.unshift(doc.current)
-      // retention trimming is applied after writing new current below
-    }
+    const editHistory = (resumeHistory && Array.isArray(resumeHistory.past) && Array.isArray(resumeHistory.future))
+      ? { past: resumeHistory.past.slice(-50), future: resumeHistory.future.slice(-50) }
+      : undefined
+    const resumePayload = { header: resume.header, sections: resume.sections }
 
-    const newCurrent: any = {
-      id: crypto.randomUUID(),
+    // Always update the live "current" version in place. We keep its id and its
+    // name so autosaves never strip the document's name (which would drop it from
+    // the saved documents list). A new name, if provided, updates the document name.
+    doc.current = {
+      id: doc.current?.id || crypto.randomUUID(),
       timestamp: now,
-      name: name || undefined,
-      resume: {
-        header: resume.header,
-        sections: resume.sections,
-      },
+      name: name ?? doc.current?.name,
+      resume: resumePayload,
       settings: settings ?? {},
+      ...(editHistory ? { editHistory } : {}),
     }
-    if (resumeHistory && Array.isArray(resumeHistory.past) && Array.isArray(resumeHistory.future)) {
-      newCurrent.editHistory = {
-        past: resumeHistory.past.slice(-50),
-        future: resumeHistory.future.slice(-50),
-      }
-    }
-    doc.current = newCurrent
     doc.updatedAt = now
 
-    // Retention policy
-    // - keep all named snapshots
-    // - for snapshots without a name (autosaves):
-    //    - keep up to 10 for today
-    //    - keep at most 1 per previous day
-    // - hard cap total (history + current) to 100 entries
-    const isSameDay = (a: number, b: number) => new Date(a).toDateString() === new Date(b).toDateString()
-    const today = Date.now()
-    const named: any[] = []
-    const autos: any[] = []
-    for (const s of doc.history || []) {
-      (s?.name ? named : autos).push(s)
+    // Manual Save (snapshot=true) also records a frozen restore point in history.
+    if (snapshot) {
+      doc.history = doc.history || []
+      doc.history.unshift({
+        id: crypto.randomUUID(),
+        timestamp: now,
+        name: name || undefined,
+        resume: resumePayload,
+        settings: settings ?? {},
+        ...(editHistory ? { editHistory } : {}),
+      })
+      // Keep the 50 most recent restore points.
+      if (doc.history.length > 50) doc.history = doc.history.slice(0, 50)
     }
-    // group autos by day
-    const byDay = new Map<string, any[]>()
-    for (const s of autos) {
-      const key = new Date(s.timestamp).toDateString()
-      if (!byDay.has(key)) byDay.set(key, [])
-      byDay.get(key)!.push(s)
-    }
-    const prunedAutos: any[] = []
-    for (const [day, list] of byDay.entries()) {
-      // sort desc by time
-      list.sort((a, b) => b.timestamp - a.timestamp)
-      if (day === new Date(today).toDateString()) {
-        // keep top 10 for today
-        prunedAutos.push(...list.slice(0, 10))
-      } else {
-        // keep only most recent for previous days
-        prunedAutos.push(list[0])
-      }
-    }
-    // rebuild history: named first (most recent first), then pruned autos (most recent first)
-    named.sort((a, b) => b.timestamp - a.timestamp)
-    prunedAutos.sort((a, b) => b.timestamp - a.timestamp)
-    doc.history = [...named, ...prunedAutos]
-    // apply hard cap (excluding current but considering total reasonable bound)
-    if (doc.history.length > 99) doc.history = doc.history.slice(0, 99)
 
     await fs.writeFile(filePath, JSON.stringify(doc, null, 2), "utf-8")
     return NextResponse.json(doc)
