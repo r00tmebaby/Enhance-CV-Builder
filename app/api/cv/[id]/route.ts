@@ -8,6 +8,13 @@ export const dynamic = "force-dynamic"
 
 const dataDir = path.join(process.cwd(), "data", "cv")
 
+// Document ids are server-generated UUIDs. Validate before using an id in a
+// filesystem path so a crafted value (e.g. "../../etc") cannot traverse outside
+// the data directory.
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+const isValidId = (id: string) => UUID_RE.test(id)
+const invalidIdResponse = () => NextResponse.json({ error: "Invalid document id" }, { status: 400 })
+
 async function readDoc(id: string) {
   const filePath = path.join(dataDir, `${id}.json`)
   const raw = await fs.readFile(filePath, "utf-8")
@@ -17,6 +24,7 @@ async function readDoc(id: string) {
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    if (!isValidId(id)) return invalidIdResponse()
     const doc = await readDoc(id)
     return NextResponse.json(doc)
   } catch (err: any) {
@@ -28,6 +36,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    if (!isValidId(id)) return invalidIdResponse()
     const filePath = path.join(dataDir, `${id}.json`)
     const raw = await fs.readFile(filePath, "utf-8").catch((e) => {
       if (e?.code === 'ENOENT') return null
@@ -86,6 +95,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    if (!isValidId(id)) return invalidIdResponse()
     const filePath = path.join(dataDir, `${id}.json`)
     const raw = await fs.readFile(filePath, "utf-8")
     const doc = JSON.parse(raw)
@@ -128,6 +138,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    if (!isValidId(id)) return invalidIdResponse()
     const filePath = path.join(dataDir, `${id}.json`)
     await fs.unlink(filePath)
     return NextResponse.json({ ok: true })
